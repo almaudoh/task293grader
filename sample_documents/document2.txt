@@ -1,0 +1,12 @@
+Neural Networks Explained
+
+Neural networks are a series of algorithms that endeavor to recognize underlying relationships in a set of data through a process that mimics the way the human brain operates.
+
+A neural network consists of layers of interconnected nodes:
+- Input Layer: Receives the input data
+- Hidden Layers: Process the information
+- Output Layer: Produces the final result
+
+Each connection between nodes has a weight that gets adjusted during training. This is how the network learns. The network uses activation functions to introduce non-linearity, allowing it to learn complex patterns.
+
+Deep learning uses neural networks with many hidden layers (deep neural networks) to learn hierarchical representations of data.

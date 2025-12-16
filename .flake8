@@ -1,3 +1,6 @@
 [flake8]
 max-line-length = 100
 exclude = .git,__pycache__,__init__.py,.mypy_cache,.pytest_cache,.venv,venv
+per-file-ignores =
+	report_generator.py:E501
+	env_setup.py:E501

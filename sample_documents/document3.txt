@@ -1,0 +1,17 @@
+Understanding Embeddings
+
+Embeddings are a type of word representation that allows words with similar meaning to have similar vector representations. They are a distributed representation for text that is perhaps one of the key breakthroughs for the impressive performance of deep learning methods on challenging natural language processing problems.
+
+Key Characteristics:
+- Dense vectors of real numbers
+- Capture semantic relationships
+- Reduce dimensionality
+- Enable similarity calculations
+
+Word embeddings are useful for tasks like:
+- Semantic search
+- Document clustering
+- Text classification
+- Question answering
+
+Popular embedding models include Word2Vec, GloVe, and modern transformer-based models like BERT. These embeddings can capture various linguistic properties and relationships between words.

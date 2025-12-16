@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG System Grading Report - {{ grading_id }}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .summary-card {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+        .summary-card h3 {
+            margin: 0 0 10px 0;
+            color: #666;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        .summary-card .value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+        }
+        .grade-badge {
+            display: inline-block;
+            padding: 10px 30px;
+            border-radius: 50px;
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
+            background-color: {{ grade_color }};
+        }
+        .breakdown {
+            margin: 30px 0;
+        }
+        .breakdown-item {
+            margin: 15px 0;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .breakdown-item h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .progress-bar {
+            background: #e0e0e0;
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-weight: bold;
+            transition: width 0.3s ease;
+        }
+        .details {
+            margin: 30px 0;
+        }
+        .detail-section {
+            margin: 20px 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .detail-header {
+            background: #f5f5f5;
+            padding: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+        }
+        .detail-header:hover {
+            background: #e0e0e0;
+        }
+        .detail-content {
+            padding: 15px;
+            display: none;
+        }
+        .detail-content.show {
+            display: block;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-success {
+            background: #E8F5E9;
+            color: #2E7D32;
+        }
+        .status-failure {
+            background: #FFEBEE;
+            color: #C62828;
+        }
+        .status-warning {
+            background: #FFF3E0;
+            color: #EF6C00;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .metadata {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+    <script>
+        function toggleSection(id) {
+            const content = document.getElementById(id);
+            content.classList.toggle('show');
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 RAG System Automated Grading Report</h1>
+
+        <div class="metadata">
+            <strong>Grading ID:</strong> {{ grading_id }}<br>
+            <strong>Date:</strong> {{ timestamp }}<br>
+            <strong>Repository:</strong> {{ results.repository_url | default('N/A') }}
+        </div>
+
+        <div class="summary">
+            <div class="summary-card">
+                <h3>Final Grade</h3>
+                <div class="value">
+                    <span class="grade-badge">{{ grade }}</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <h3>Total Score</h3>
+                <div class="value">{{ total_score | round(1) }}/100</div>
+            </div>
+            <div class="summary-card">
+                <h3>Language</h3>
+                <div class="value" style="font-size: 24px;">{{ results.language_detected | default('N/A') }}</div>
+            </div>
+        </div>
+
+        <div class="breakdown">
+            <h2>📊 Score Breakdown</h2>
+            {% for item in breakdown_render %}
+            <div class="breakdown-item">
+                <h4>{{ item.category_name }}</h4>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ item.percentage }}%">
+                        {{ item.score | round(1) }}/{{ item.max_score }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="details">
+            <h2>📝 Detailed Results</h2>
+
+            <div class="detail-section">
+                <div class="detail-header" onclick="toggleSection('repo-details')">
+                    ▶ Repository Setup
+                    <span class="status-badge {{ 'status-success' if results.repository_accessible else 'status-failure' }}">
+                        {{ '✓ Pass' if results.repository_accessible else '✗ Fail' }}
+                    </span>
+                </div>
+                <div id="repo-details" class="detail-content">
+                    <p><strong>Language Detected:</strong> {{ results.language_detected | default('None') }}</p>
+                    <p><strong>Main File Found:</strong> {{ 'Yes' if results.main_file_found else 'No' }}</p>
+                    <p><strong>README Present:</strong> {{ 'Yes' if results.has_readme else 'No' }}</p>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-header" onclick="toggleSection('env-details')">
+                    ▶ Environment Configuration
+                    <span class="status-badge {{ 'status-success' if not missing_vars else 'status-warning' }}">
+                        {{ '✓ Complete' if not missing_vars else '⚠ ' ~ (missing_vars | length) ~ ' Missing' }}
+                    </span>
+                </div>
+                <div id="env-details" class="detail-content">
+                    <p><strong>.env Template Present:</strong> {{ 'Yes' if env_results.has_env_template else 'No' }}</p>
+                    {% if missing_vars %}
+                        <p><strong>Missing Variables:</strong> {{ missing_vars | join(', ') }}</p>
+                    {% else %}
+                        <p>✓ All required variables documented</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-header" onclick="toggleSection('upload-details')">
+                    ▶ Document Upload Tests
+                    <span class="status-badge {{ 'status-success' if successful_uploads == (upload_results | length) else 'status-warning' }}">
+                        {{ successful_uploads }}/{{ upload_results | length }} Successful
+                    </span>
+                </div>
+                <div id="upload-details" class="detail-content">
+                    {% for upload in upload_results %}
+                    <p>
+                        <span class="status-badge {{ 'status-success' if upload.success else 'status-failure' }}">
+                            {{ '✓' if upload.success else '✗' }}
+                        </span>
+                        <strong>{{ upload.document }}:</strong>
+                        {{ upload.status_code | default('Error') }}
+                    </p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-header" onclick="toggleSection('query-details')">
+                    ▶ RAG Query Tests
+                    <span class="status-badge {{ 'status-success' if successful_queries == (query_results | length) else 'status-warning' }}">
+                        {{ successful_queries }}/{{ query_results | length }} Successful
+                    </span>
+                </div>
+                <div id="query-details" class="detail-content">
+                    {% for query in query_results %}
+                    <div style="margin: 15px 0; padding: 10px; background: #f9f9f9; border-radius: 4px;">
+                        <p><strong>Query:</strong> {{ query.query }}</p>
+                        <p>
+                            <span class="status-badge {{ 'status-success' if query.success else 'status-failure' }}">
+                                {{ '✓' if query.success else '✗' }}
+                            </span>
+                            Status: {{ query.status_code | default('Error') }}
+                        </p>
+                        {% if query.relevance_score is defined %}
+                        <p><strong>Relevance Score:</strong> {{ query.relevance_score | round(1) }}%</p>
+                        {% endif %}
+                        <p><strong>Has Context:</strong> {{ 'Yes' if query.has_context else 'No' }}</p>
+                        <p><strong>Has Answer:</strong> {{ 'Yes' if query.has_answer else 'No' }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-header" onclick="toggleSection('tech-details')">
+                    ▶ Technical Requirements
+                    <span class="status-badge {{ 'status-success' if tech_passed == (tech_results | length) else 'status-warning' }}">
+                        {{ tech_passed }}/{{ tech_results | length }} Verified
+                    </span>
+                </div>
+                <div id="tech-details" class="detail-content">
+                    {% for key, label in tech_labels.items() %}
+                    <p>
+                        <span class="status-badge {{ 'status-success' if tech_results[key] else 'status-failure' }}">
+                            {{ '✓' if tech_results[key] else '✗' }}
+                        </span>
+                        {{ label }}
+                    </p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 40px; padding: 20px; background: #E3F2FD; border-radius: 8px;">
+            <h3>📌 Summary</h3>
+            {% if grade in ['A','B'] %}
+            <p>✅ <strong>Excellent work!</strong> The RAG system implementation meets all or most requirements with a grade of <strong>{{ grade }}</strong>.</p>
+            {% elif grade == 'C' %}
+            <p>⚠️ <strong>Good effort!</strong> The implementation is functional but has room for improvement. Grade: <strong>{{ grade }}</strong></p>
+            {% else %}
+            <p>❌ <strong>Needs improvement.</strong> Several requirements were not met. Grade: <strong>{{ grade }}</strong></p>
+            <p>Please review the detailed feedback above and address the failing components.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

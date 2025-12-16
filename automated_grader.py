@@ -1,7 +1,6 @@
 # automated_grader.py
 import os
-import sys
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from grading_session import GradingSession
 from repo_analyzer import RepositoryAnalyzer
 from env_setup import EnvironmentSetup
@@ -145,7 +144,9 @@ class AutomatedGrader:
 
             if not startup_success:
                 session.add_error("Application did not start within timeout")
-                return self._generate_failure_report(session, "Application startup timeout", process)
+                return self._generate_failure_report(
+                    session, "Application startup timeout", process
+                )
 
             # Check health endpoint
             health_ok = app_runner.check_health_endpoint()
@@ -183,8 +184,16 @@ class AutomatedGrader:
             logger.info("\n[STEP 10/11] Generating reports...")
             reporter = ReportGenerator(logger)
 
-            html_report = reporter.generate_html_report(final_scores, session.all_results, grading_id)
-            json_report = reporter.generate_json_report(final_scores, session.all_results, grading_id)
+            html_report = reporter.generate_html_report(
+                final_scores,
+                session.all_results,
+                grading_id,
+            )
+            json_report = reporter.generate_json_report(
+                final_scores,
+                session.all_results,
+                grading_id,
+            )
 
             html_path = reporter.save_report(html_report, f'{grading_id}.html')
             json_path = reporter.save_report(json_report, f'{grading_id}.json')
@@ -197,7 +206,7 @@ class AutomatedGrader:
             session.finalize()
 
             logger.info("=" * 80)
-            logger.info(f"Grading complete!")
+            logger.info("Grading complete!")
             logger.info(f"Final Score: {final_scores['total_score']:.1f}/100")
             logger.info(f"Grade: {final_scores['grade']}")
             logger.info(f"HTML Report: {html_path}")
@@ -221,7 +230,7 @@ class AutomatedGrader:
             if process:
                 try:
                     ApplicationRunner(logger).stop_application(process)
-                except:
+                except Exception:
                     pass
 
             return self._generate_error_report(session, str(e))
@@ -232,12 +241,17 @@ class AutomatedGrader:
                 logger.info("Cleaning up workspace...")
                 cleanup_workspace(workspace)
 
-    def _generate_failure_report(self, session: GradingSession, reason: str, process=None) -> Dict[str, Any]:
+    def _generate_failure_report(
+        self,
+        session: GradingSession,
+        reason: str,
+        process=None,
+    ) -> Dict[str, Any]:
         """Generate report for failed grading"""
         if process:
             try:
                 ApplicationRunner(session.logger).stop_application(process)
-            except:
+            except Exception:
                 pass
 
         session.add_error(reason)
@@ -247,8 +261,16 @@ class AutomatedGrader:
         final_scores = scorer.calculate_final_score(session.all_results)
 
         reporter = ReportGenerator(session.logger)
-        html_report = reporter.generate_html_report(final_scores, session.all_results, session.grading_id)
-        json_report = reporter.generate_json_report(final_scores, session.all_results, session.grading_id)
+        html_report = reporter.generate_html_report(
+            final_scores,
+            session.all_results,
+            session.grading_id,
+        )
+        json_report = reporter.generate_json_report(
+            final_scores,
+            session.all_results,
+            session.grading_id,
+        )
 
         html_path = reporter.save_report(html_report, f'{session.grading_id}.html')
         json_path = reporter.save_report(json_report, f'{session.grading_id}.json')
