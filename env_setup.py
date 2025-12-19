@@ -51,7 +51,7 @@ PORT=8080
 
     def prepare_sample_documents(self, repo_path: str) -> list:
         """Copy sample documents into the test environment"""
-        source_docs_dir = 'sample_documents'
+        source_docs_dir = os.path.join(os.path.dirname(__file__), 'sample_documents')
         test_data_dir = os.path.join(repo_path, 'test_data')
         documents = []
 
