@@ -1,4 +1,5 @@
 # functional_tester.py
+import json
 import os
 import requests
 import time
@@ -49,7 +50,8 @@ class FunctionalTester:
                     result['error'] = response.text
 
                 results.append(result)
-                self.logger.info(f"Upload {'succeeded' if success else 'failed'}: {doc_path}")
+                self.logger.info(f"Upload {'succeeded' if success else 'failed'}: {doc_path}:"
+                                 f" {json.dumps(result)}")
 
                 # Small delay between uploads
                 time.sleep(1)
