@@ -1,5 +1,6 @@
 # report_generator.py
 from datetime import datetime
+import os
 from typing import Dict, Any, List
 import json
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -11,7 +12,7 @@ class ReportGenerator:
     def __init__(self, logger):
         self.logger = logger
         self.env = Environment(
-            loader=FileSystemLoader('templates'),
+            loader=FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')),
             autoescape=select_autoescape(['html', 'xml']),
         )
 
