@@ -4,6 +4,7 @@ REQUIRED_ENDPOINTS:
     path: /prompt
     props:
       - query
+    mime_type: multipart/form-data
   upload:
     path: /upload
     props:

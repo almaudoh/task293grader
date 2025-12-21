@@ -82,12 +82,33 @@ class FunctionalTester:
         try:
             self.logger.info(f"Testing query: {query}")
 
-            response = requests.post(
-                f"{self.config.SERVER_BASE_URL}{self.config.ENDPOINT_PREFIX}"
-                f"{self.config.REQUIRED_ENDPOINTS['query']['path']}",
-                json={self.config.REQUIRED_ENDPOINTS['query']['props'][0]: query},
-                timeout=self.config.API_REQUEST_TIMEOUT
-            )
+            url = f"{self.config.SERVER_BASE_URL}{self.config.ENDPOINT_PREFIX}" \
+                  f"{self.config.REQUIRED_ENDPOINTS['query']['path']}"
+            payload = {
+                self.config.REQUIRED_ENDPOINTS['query']['props'][0]: query
+            }
+            timeout = self.config.API_REQUEST_TIMEOUT
+            mime_type = self.config.REQUIRED_ENDPOINTS['query'].get('mime_type', 'application/json')
+
+            if mime_type == 'application/json':
+                response = requests.post(
+                    url,
+                    json=payload,
+                    timeout=timeout
+                )
+            elif mime_type == 'multipart/form-data':
+                response = requests.post(
+                    url,
+                    data=payload,
+                    timeout=timeout
+                )
+            else:
+                response = requests.post(
+                    url,
+                    headers={'Content-Type': mime_type},
+                    data=payload,
+                    timeout=timeout
+                )
 
             if response.status_code == 200:
                 data = response.json()

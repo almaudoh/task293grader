@@ -12,6 +12,7 @@ def main():
 Examples:
   %(prog)s https://github.com/student/rag-project
   %(prog)s --batch submissions.txt
+  %(prog)s --mode debug https://github.com/student/rag-project
   %(prog)s --url https://github.com/student/rag-project --output custom_report
 """
     )
@@ -47,6 +48,14 @@ Examples:
         help='Verbose output'
     )
 
+    parser.add_argument(
+        '--mode',
+        '-m',
+        choices=['normal', 'interactive', 'debug'],
+        default='normal',
+        help='Grading mode: normal, interactive, or debug (default: normal)'
+    )
+
     args = parser.parse_args()
 
     if not args.url and not args.batch:
@@ -54,6 +63,9 @@ Examples:
         sys.exit(1)
 
     grader = AutomatedGrader()
+
+    # Set mode from argument
+    grader.config.MODE = args.mode
 
     if args.yaml_override:
         try:

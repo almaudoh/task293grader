@@ -14,7 +14,7 @@ class ApplicationRunner:
         self.config = config or GraderConfig()
 
     def start_application(
-        self, repo_path: str, language: str, main_file: str, port: int = 8080
+        self, repo_path: str, language: str, main_file: str, port: Optional[int] = None
     ) -> Optional[subprocess.Popen]:
         """Start the application"""
         self.logger.info(f"Starting {language} application")
@@ -29,6 +29,7 @@ class ApplicationRunner:
         if language == 'nodejs':
             run_cmd.append(main_file)
         elif language == 'python':
+            port = port or self.config.SERVER_PORT
             run_cmd.extend(['--port', str(port)])
         elif language == 'golang':
             run_cmd.append(main_file)

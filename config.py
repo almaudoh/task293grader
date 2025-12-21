@@ -38,6 +38,7 @@ class GraderConfig:
         "query": {
             "path": "/query",
             "props": ["query"],
+            "mime_type": "application/json"
         },
         "upload": {
             "path": "/upload",

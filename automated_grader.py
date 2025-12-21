@@ -147,7 +147,9 @@ class AutomatedGrader:
             logger.info("\n[STEP 5/11] Starting application...")
             app_runner = ApplicationRunner(logger, config=local_config)
 
-            process = app_runner.start_application(repo_path, language, main_file)
+            process = app_runner.start_application(
+                repo_path, language, main_file, self.config.SERVER_PORT
+            )
 
             if not process:
                 session.add_error("Failed to start application")
