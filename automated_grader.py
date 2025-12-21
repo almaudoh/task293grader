@@ -1,6 +1,7 @@
 # automated_grader.py
 import os
 from typing import Dict, Any, Optional
+from copy import deepcopy
 from grading_session import GradingSession
 from repo_analyzer import RepositoryAnalyzer
 from env_setup import EnvironmentSetup
@@ -28,7 +29,11 @@ class AutomatedGrader:
             for key, value in config_overrides.items():
                 setattr(self.config, key, value)
 
-    def grade_submission(self, github_url: str) -> Dict[str, Any]:
+    def grade_submission(
+        self,
+        github_url: str,
+        config_overrides: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """Grade a single submission"""
 
         # Initialize session
@@ -36,6 +41,12 @@ class AutomatedGrader:
         workspace = create_isolated_workspace(grading_id)
         logger = setup_logger(grading_id)
         session = GradingSession(grading_id, workspace, logger)
+
+        # Prepare configuration (allow per-call overrides without mutating base)
+        local_config = deepcopy(self.config)
+        if config_overrides:
+            for key, value in config_overrides.items():
+                setattr(local_config, key, value)
 
         logger.info("=" * 80)
         logger.info(f"Starting automated grading session: {grading_id}")
@@ -50,7 +61,7 @@ class AutomatedGrader:
 
             # Step 1: Clone and analyze repository
             logger.info("\n[STEP 1/11] Cloning and analyzing repository...")
-            analyzer = RepositoryAnalyzer(logger, config=self.config)
+            analyzer = RepositoryAnalyzer(logger, config=local_config)
 
             repo_path = analyzer.clone_repository(github_url, os.path.join(workspace, 'repo'))
 
@@ -96,10 +107,10 @@ class AutomatedGrader:
 
                 if env_file:
                     env_vars = parse_env_file(env_file)
-                    missing_vars = [var for var in self.config.REQUIRED_ENV_VARS
+                    missing_vars = [var for var in local_config.REQUIRED_ENV_VARS
                                     if var not in env_vars]
             else:
-                missing_vars = self.config.REQUIRED_ENV_VARS
+                missing_vars = local_config.REQUIRED_ENV_VARS
 
             session.add_results('environment', {
                 'has_env_template': has_env_template,
@@ -108,7 +119,7 @@ class AutomatedGrader:
 
             # Step 3: Setup test environment
             logger.info("\n[STEP 3/11] Setting up test environment...")
-            env_setup = EnvironmentSetup(logger, config=self.config)
+            env_setup = EnvironmentSetup(logger, config=local_config)
 
             if not env_setup.create_env_file(repo_path):
                 session.add_error("Failed to create .env file")
@@ -123,7 +134,7 @@ class AutomatedGrader:
 
             # Step 4: Install dependencies
             logger.info("\n[STEP 4/11] Installing dependencies...")
-            dep_manager = DependencyManager(logger, config=self.config)
+            dep_manager = DependencyManager(logger, config=local_config)
 
             dep_success = dep_manager.install_dependencies(repo_path, language)
             session.add_result('dependencies_installed', dep_success)
@@ -134,7 +145,7 @@ class AutomatedGrader:
 
             # Step 5: Start application
             logger.info("\n[STEP 5/11] Starting application...")
-            app_runner = ApplicationRunner(logger, config=self.config)
+            app_runner = ApplicationRunner(logger, config=local_config)
 
             process = app_runner.start_application(repo_path, language, main_file)
 
@@ -160,7 +171,7 @@ class AutomatedGrader:
 
             # Step 6: Test document upload
             logger.info("\n[STEP 6/11] Testing document upload...")
-            tester = FunctionalTester(logger, config=self.config)
+            tester = FunctionalTester(logger, config=local_config)
 
             upload_results = tester.test_document_upload(test_documents)
             session.add_results('upload', upload_results)

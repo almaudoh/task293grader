@@ -6,7 +6,17 @@ from automated_grader import AutomatedGrader
 # Grade a single submission
 grader = AutomatedGrader()
 
+# Default grading
 result = grader.grade_submission('https://github.com/student/rag-implementation')
+
+# Grading with per-call config overrides
+# e.g., change server port and timeouts without mutating global config
+overrides = {
+    'SERVER_PORT': 9000,
+    'APP_STARTUP_TIMEOUT': 120,
+    'API_REQUEST_TIMEOUT': 60,
+}
+result = grader.grade_submission('https://github.com/student/rag-implementation', config_overrides=overrides)
 
 print(f"Grade: {result['scores']['grade']}")
 print(f"Score: {result['scores']['total_score']}/100")
@@ -33,7 +43,8 @@ def batch_grade(submissions_file, output_csv='results.csv'):
     for i, url in enumerate(submissions, 1):
         print(f"\nGrading {i}/{len(submissions)}: {url}")
         
-        result = grader.grade_submission(url)
+        # Optionally pass per-call overrides (example shown)
+        result = grader.grade_submission(url, config_overrides={'API_REQUEST_TIMEOUT': 60})
         
         results.append({
             'url': url,
