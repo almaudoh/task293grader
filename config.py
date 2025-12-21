@@ -83,11 +83,11 @@ class GraderConfig:
 
     # ChromaDB settings
     CHROMA_HOST = 'localhost'
-    CHROMA_PORT = 8000
+    CHROMA_PORT = 8999
 
     # Server settings
     SERVER_HOST = 'localhost'
-    SERVER_PORT = 8080
+    SERVER_PORT = 8998
 
     @property
     def SERVER_BASE_URL(self) -> str:
