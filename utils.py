@@ -120,3 +120,11 @@ def calculate_relevance(answer: str, keywords: list) -> float:
     answer_lower = answer.lower()
     matches = sum(1 for keyword in keywords if keyword.lower() in answer_lower)
     return (matches / len(keywords)) * 100 if keywords else 0.0
+
+
+def strip_html_tags(text: str) -> str:
+    """Strip HTML tags from text"""
+    from html import unescape
+    import re
+
+    return unescape(re.sub(r'\n\s*\n', '\n', re.sub(r'<[^>]+>', '', text))).strip()

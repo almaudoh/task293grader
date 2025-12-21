@@ -1,5 +1,7 @@
 # env_setup.py
 import os
+
+from git import Optional
 from config import GraderConfig
 from utils import write_file
 import shutil
@@ -8,9 +10,9 @@ import shutil
 class EnvironmentSetup:
     """Sets up test environment for grading"""
 
-    def __init__(self, logger):
+    def __init__(self, logger, config: Optional[GraderConfig] = None):
         self.logger = logger
-        self.config = GraderConfig()
+        self.config = config or GraderConfig()
 
     def create_env_file(self, repo_path: str) -> bool:
         """Create .env file with test credentials"""
@@ -25,7 +27,7 @@ LLM_MODEL_NAME=gemini-2.0-flash-exp
 CHROMA_DB_HOST={self.config.CHROMA_HOST}:{self.config.CHROMA_PORT}
 RAG_DATA_DIR=./test_data
 CHUNK_LENGTH=512
-PORT=8080
+PORT={self.config.SERVER_PORT}
 """
 
             env_path = os.path.join(repo_path, '.env')

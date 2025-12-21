@@ -9,9 +9,9 @@ from utils import wait_for_port
 class ApplicationRunner:
     """Manages application startup and health checks"""
 
-    def __init__(self, logger):
+    def __init__(self, logger, config: Optional[GraderConfig] = None):
         self.logger = logger
-        self.config = GraderConfig()
+        self.config = config or GraderConfig()
 
     def start_application(
         self, repo_path: str, language: str, main_file: str, port: int = 8080
@@ -51,10 +51,13 @@ class ApplicationRunner:
             self.logger.error(f"Failed to start application: {e}")
             return None
 
-    def wait_for_startup(self, port: int, timeout: Optional[int] = None) -> bool:
+    def wait_for_startup(self, port: Optional[int] = None, timeout: Optional[int] = None) -> bool:
         """Wait for application to start"""
         if timeout is None:
             timeout = self.config.APP_STARTUP_TIMEOUT
+
+        if port is None:
+            port = self.config.SERVER_PORT
 
         self.logger.info(f"Waiting for application on port {port}")
 
@@ -65,9 +68,10 @@ class ApplicationRunner:
         self.logger.error("Application failed to start within timeout")
         return False
 
-    def check_health_endpoint(self, base_url: str = 'http://localhost:8080') -> bool:
+    def check_health_endpoint(self) -> bool:
         """Check if health endpoint responds"""
-        health_url = f"{base_url}/health"
+        health_url = f"{self.config.SERVER_BASE_URL}{self.config.ENDPOINT_PREFIX}" \
+                     f"{self.config.REQUIRED_ENDPOINTS['health']['path']}"
 
         try:
             self.logger.info(f"Checking health endpoint: {health_url}")

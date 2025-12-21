@@ -3,19 +3,19 @@ import json
 import os
 import requests
 import time
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from config import GraderConfig
-from utils import calculate_relevance
+from utils import calculate_relevance, strip_html_tags
 
 
 class FunctionalTester:
     """Tests RAG system functionality"""
 
-    def __init__(self, logger):
+    def __init__(self, logger, config: Optional[GraderConfig] = None):
         self.logger = logger
-        self.config = GraderConfig()
+        self.config = config or GraderConfig()
 
-    def test_document_upload(self, base_url: str, documents: List[str]) -> List[Dict[str, Any]]:
+    def test_document_upload(self, documents: List[str]) -> List[Dict[str, Any]]:
         """Test document upload functionality"""
         self.logger.info("Testing document upload")
         results = []
@@ -25,10 +25,14 @@ class FunctionalTester:
                 self.logger.info(f"Uploading document: {doc_path}")
 
                 with open(doc_path, 'rb') as f:
-                    files = {'file': (doc_path.split('/')[-1], f, 'text/plain')}
+                    files = {
+                        self.config.REQUIRED_ENDPOINTS['upload']['props'][0]:
+                        (doc_path.split('/')[-1], f, 'text/plain')
+                    }
 
                     response = requests.post(
-                        f'{base_url}/upload',
+                        f"{self.config.SERVER_BASE_URL}{self.config.ENDPOINT_PREFIX}"
+                        f"{self.config.REQUIRED_ENDPOINTS['upload']['path']}",
                         files=files,
                         timeout=self.config.API_REQUEST_TIMEOUT
                     )
@@ -48,6 +52,10 @@ class FunctionalTester:
                         result['response'] = response.text
                 else:
                     result['error'] = response.text
+                    self.logger.error(
+                        f"Upload failed with status {response.status_code}:"
+                        f" {strip_html_tags(response.text)}"
+                    )
 
                 results.append(result)
                 self.logger.info(f"Upload {'succeeded' if success else 'failed'}: {doc_path}:"
@@ -69,14 +77,15 @@ class FunctionalTester:
 
         return results
 
-    def test_query_endpoint(self, base_url: str, query: str) -> Dict[str, Any]:
+    def test_query_endpoint(self, query: str) -> Dict[str, Any]:
         """Test a single query"""
         try:
             self.logger.info(f"Testing query: {query}")
 
             response = requests.post(
-                f'{base_url}/query',
-                json={'query': query},
+                f"{self.config.SERVER_BASE_URL}{self.config.ENDPOINT_PREFIX}"
+                f"{self.config.REQUIRED_ENDPOINTS['query']['path']}",
+                json={self.config.REQUIRED_ENDPOINTS['query']['props'][0]: query},
                 timeout=self.config.API_REQUEST_TIMEOUT
             )
 
@@ -118,7 +127,7 @@ class FunctionalTester:
                 'error': str(e)
             }
 
-    def test_rag_queries(self, base_url: str) -> List[Dict[str, Any]]:
+    def test_rag_queries(self) -> List[Dict[str, Any]]:
         """Test RAG query functionality with multiple queries"""
         self.logger.info("Testing RAG queries")
         results = []
@@ -127,7 +136,7 @@ class FunctionalTester:
             query_text = test_query['question']
             expected_keywords = test_query['expected_keywords']
 
-            result = self.test_query_endpoint(base_url, query_text)
+            result = self.test_query_endpoint(query_text)
             result['query'] = query_text
 
             # Calculate relevance if we got an answer

@@ -1,14 +1,14 @@
 # scoring_engine.py
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from config import GraderConfig
 
 
 class ScoringEngine:
     """Calculates scores and generates grades"""
 
-    def __init__(self, logger):
+    def __init__(self, logger, config: Optional[GraderConfig] = None):
         self.logger = logger
-        self.config = GraderConfig()
+        self.config = config or GraderConfig()
 
     def calculate_repo_score(self, results: Dict[str, Any]) -> float:
         """Calculate repository setup score (15 points)"""

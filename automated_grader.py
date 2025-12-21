@@ -1,6 +1,6 @@
 # automated_grader.py
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from grading_session import GradingSession
 from repo_analyzer import RepositoryAnalyzer
 from env_setup import EnvironmentSetup
@@ -22,8 +22,11 @@ from config import GraderConfig
 
 class AutomatedGrader:
     """Main orchestrator for automated grading"""
-    def __init__(self):
+    def __init__(self, config_overrides: Optional[Dict[str, Any]] = None):
         self.config = GraderConfig()
+        if config_overrides:
+            for key, value in config_overrides.items():
+                setattr(self.config, key, value)
 
     def grade_submission(self, github_url: str) -> Dict[str, Any]:
         """Grade a single submission"""
@@ -47,7 +50,7 @@ class AutomatedGrader:
 
             # Step 1: Clone and analyze repository
             logger.info("\n[STEP 1/11] Cloning and analyzing repository...")
-            analyzer = RepositoryAnalyzer(logger)
+            analyzer = RepositoryAnalyzer(logger, config=self.config)
 
             repo_path = analyzer.clone_repository(github_url, os.path.join(workspace, 'repo'))
 
@@ -105,7 +108,7 @@ class AutomatedGrader:
 
             # Step 3: Setup test environment
             logger.info("\n[STEP 3/11] Setting up test environment...")
-            env_setup = EnvironmentSetup(logger)
+            env_setup = EnvironmentSetup(logger, config=self.config)
 
             if not env_setup.create_env_file(repo_path):
                 session.add_error("Failed to create .env file")
@@ -120,7 +123,7 @@ class AutomatedGrader:
 
             # Step 4: Install dependencies
             logger.info("\n[STEP 4/11] Installing dependencies...")
-            dep_manager = DependencyManager(logger)
+            dep_manager = DependencyManager(logger, config=self.config)
 
             dep_success = dep_manager.install_dependencies(repo_path, language)
             session.add_result('dependencies_installed', dep_success)
@@ -131,7 +134,7 @@ class AutomatedGrader:
 
             # Step 5: Start application
             logger.info("\n[STEP 5/11] Starting application...")
-            app_runner = ApplicationRunner(logger)
+            app_runner = ApplicationRunner(logger, config=self.config)
 
             process = app_runner.start_application(repo_path, language, main_file)
 
@@ -140,7 +143,7 @@ class AutomatedGrader:
                 return self._generate_failure_report(session, "Application start failed")
 
             # Wait for startup
-            startup_success = app_runner.wait_for_startup(8080)
+            startup_success = app_runner.wait_for_startup()
 
             if not startup_success:
                 session.add_error("Application did not start within timeout")
@@ -157,14 +160,14 @@ class AutomatedGrader:
 
             # Step 6: Test document upload
             logger.info("\n[STEP 6/11] Testing document upload...")
-            tester = FunctionalTester(logger)
+            tester = FunctionalTester(logger, config=self.config)
 
-            upload_results = tester.test_document_upload('http://localhost:8080', test_documents)
+            upload_results = tester.test_document_upload(test_documents)
             session.add_results('upload', upload_results)
 
             # Step 7: Test RAG queries
             logger.info("\n[STEP 7/11] Testing RAG query functionality...")
-            query_results = tester.test_rag_queries('http://localhost:8080')
+            query_results = tester.test_rag_queries()
             session.add_results('queries', query_results)
 
             # Step 8: Verify technical requirements

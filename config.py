@@ -1,6 +1,9 @@
 # config.py
 import os
 from dataclasses import dataclass
+from dotenv import load_dotenv
+
+load_dotenv('.env.grader')
 
 
 @dataclass
@@ -22,8 +25,24 @@ class GraderConfig:
         'PORT'
     ]
 
+    # Endpoint prefix, e.g. '/api/v1'
+    ENDPOINT_PREFIX = ''
+
     # Expected API endpoints
-    REQUIRED_ENDPOINTS = ['/query', '/upload', '/health']
+    REQUIRED_ENDPOINTS = {
+        "query": {
+            "path": "/query",
+            "props": ["query"],
+        },
+        "upload": {
+            "path": "/upload",
+            "props": ["files"],
+        },
+        "health": {
+            "path": "/health",
+            "props": [],
+        },
+    }
 
     # Timeout settings (in seconds)
     CLONE_TIMEOUT = 60
@@ -65,6 +84,15 @@ class GraderConfig:
     # ChromaDB settings
     CHROMA_HOST = 'localhost'
     CHROMA_PORT = 8000
+
+    # Server settings
+    SERVER_HOST = 'localhost'
+    SERVER_PORT = 8080
+
+    @property
+    def SERVER_BASE_URL(self) -> str:
+        scheme = 'http' if self.SERVER_HOST == 'localhost' else 'https'
+        return f'{scheme}://{self.SERVER_HOST}:{self.SERVER_PORT}'
 
     # Test data
     TEST_DATA_DIR = './grader_test_data'

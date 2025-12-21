@@ -8,9 +8,9 @@ from config import GraderConfig
 class RepositoryAnalyzer:
     """Analyzes repository structure and detects language"""
 
-    def __init__(self, logger):
+    def __init__(self, logger, config: Optional[GraderConfig] = None):
         self.logger = logger
-        self.config = GraderConfig()
+        self.config = config or GraderConfig()
 
     def clone_repository(self, github_url: str, destination: str) -> Optional[str]:
         """Clone GitHub repository"""

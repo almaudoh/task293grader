@@ -1,14 +1,15 @@
 # dependency_manager.py
 import subprocess
+from typing import Optional
 from config import GraderConfig
 
 
 class DependencyManager:
     """Manages dependency installation for different languages"""
 
-    def __init__(self, logger):
+    def __init__(self, logger, config: Optional[GraderConfig] = None):
         self.logger = logger
-        self.config = GraderConfig()
+        self.config = config or GraderConfig()
 
     def install_dependencies(self, repo_path: str, language: str) -> bool:
         """Install dependencies based on language"""
