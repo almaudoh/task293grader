@@ -4,5 +4,7 @@ __pycache__/
 *.pyc
 .DS_Store
 .env.*
+!.env.example
+!.env.*.example
 grading_logs/
 grading_reports/

@@ -21,12 +21,12 @@ class EnvironmentSetup:
 
             env_content = f"""# Grader-generated test environment
 HF_API_KEY={self.config.TEST_HF_KEY}
-EMBED_MODEL_NAME=sentence-transformers/all-MiniLM-L6-v2
+EMBED_MODEL_NAME={self.config.EMBED_MODEL_NAME}
 GEMINI_API_KEY={self.config.TEST_GEMINI_KEY}
-LLM_MODEL_NAME=gemini-2.0-flash-exp
-CHROMA_DB_HOST={self.config.CHROMA_HOST}:{self.config.CHROMA_PORT}
-RAG_DATA_DIR=./test_data
-CHUNK_LENGTH=512
+LLM_MODEL_NAME={self.config.LLM_MODEL_NAME}
+CHROMA_DB_HOST={self.config.CHROMA_DB_HOST}
+RAG_DATA_DIR={self.config.TEST_DATA_DIR}
+CHUNK_LENGTH={self.config.CHUNK_LENGTH}
 PORT={self.config.SERVER_PORT}
 """
 

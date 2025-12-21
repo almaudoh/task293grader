@@ -214,6 +214,14 @@ class AutomatedGrader:
 
             # Step 11: Cleanup
             logger.info("\n[STEP 11/11] Cleaning up...")
+
+            if local_config.MODE in ['interactive', 'debug']:
+                # Wait for user response before terminating application.
+                while True:
+                    user_input = input("Type 'exit' to terminate the grading session and cleanup: ")
+                    if user_input.strip().lower() == 'exit':
+                        break
+
             if process:
                 app_runner.stop_application(process)
 

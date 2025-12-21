@@ -1,7 +1,10 @@
 # config.py
+from doctest import debug
 import os
 from dataclasses import dataclass
+from typing import Union
 from dotenv import load_dotenv
+import yaml
 
 load_dotenv('.env.grader')
 
@@ -9,6 +12,8 @@ load_dotenv('.env.grader')
 @dataclass
 class GraderConfig:
     """Central configuration for the automated grader"""
+    # Mode: normal, interactive, debug
+    MODE = 'normal'
 
     # Supported languages
     SUPPORTED_LANGUAGES = ['nodejs', 'python', 'golang', 'dart']
@@ -53,10 +58,10 @@ class GraderConfig:
     # Grading weights
     WEIGHTS = {
         'repository_setup': 15,
-        'environment_config': 15,
+        'environment_config': 5,
         'dependencies': 10,
         'startup': 10,
-        'upload': 15,
+        'upload': 25,
         'query': 25,
         'technical': 10
     }
@@ -77,13 +82,14 @@ class GraderConfig:
         }
     ]
 
-    # Test credentials
-    TEST_HF_KEY = os.getenv('GRADER_HF_KEY', 'hf_test_key_placeholder')
-    TEST_GEMINI_KEY = os.getenv('GRADER_GEMINI_KEY', 'gemini_test_key_placeholder')
-
     # ChromaDB settings
     CHROMA_HOST = 'localhost'
     CHROMA_PORT = 8999
+
+    @property
+    def CHROMA_DB_HOST(self) -> str:
+        scheme = 'http' if self.CHROMA_HOST == 'localhost' else 'https'
+        return f'{scheme}://{self.CHROMA_HOST}:{self.CHROMA_PORT}'
 
     # Server settings
     SERVER_HOST = 'localhost'
@@ -94,8 +100,18 @@ class GraderConfig:
         scheme = 'http' if self.SERVER_HOST == 'localhost' else 'https'
         return f'{scheme}://{self.SERVER_HOST}:{self.SERVER_PORT}'
 
+    # Additional .env settings for the application being graded.
+    # Credentials
+    TEST_HF_KEY = os.getenv('GRADER_HF_KEY', 'hf_test_key_placeholder')
+    TEST_GEMINI_KEY = os.getenv('GRADER_GEMINI_KEY', 'gemini_test_key_placeholder')
+
+    EMBED_MODEL_NAME = os.getenv('GRADER_EMBED_MODEL_NAME', 'sentence-transformers/all-MiniLM-L6-v2')
+    LLM_MODEL_NAME = os.getenv('GRADER_LLM_MODEL_NAME', 'gemini-2.0-flash-exp')
+
     # Test data
-    TEST_DATA_DIR = './grader_test_data'
+    TEST_DATA_DIR = './test_data'
+
+    CHUNK_LENGTH = int(os.getenv('GRADER_CHUNK_LENGTH', '512'))
 
     # Language-specific configurations
     LANGUAGE_CONFIG = {
@@ -133,3 +149,24 @@ class GraderConfig:
         'D': 60,
         'F': 0
     }
+
+    def override_from_yaml(self, yaml_path: str) -> None:
+        """Apply configuration overrides from a YAML file."""
+        if not os.path.isfile(yaml_path):
+            raise FileNotFoundError(f"Config file not found: {yaml_path}")
+
+        with open(yaml_path, 'r', encoding='utf-8') as file:
+            data = yaml.safe_load(file) or {}
+
+        if not isinstance(data, dict):
+            raise ValueError("YAML config must be a mapping of keys to values")
+
+        for key, value in data.items():
+            attr = getattr(type(self), key, None)
+            if isinstance(attr, property):
+                raise ValueError(f"Cannot override read-only setting: {key}")
+
+            if hasattr(self, key):
+                setattr(self, key, value)
+            else:
+                raise KeyError(f"Unknown configuration key: {key}")

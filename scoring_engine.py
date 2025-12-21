@@ -1,6 +1,7 @@
 # scoring_engine.py
 from typing import Dict, Any, Optional
 from config import GraderConfig
+import math
 
 
 class ScoringEngine:
@@ -16,16 +17,17 @@ class ScoringEngine:
         max_score = self.config.WEIGHTS['repository_setup']
 
         # Accessible repository (5 points)
+        item_score = max_score / 3
         if results.get('repository_accessible', False):
-            score += 5
+            score += item_score
 
         # Correct structure - language detected and main file found (5 points)
         if results.get('language_detected') and results.get('main_file_found'):
-            score += 5
+            score += item_score
 
         # Documentation - README exists (5 points)
         if results.get('has_readme', False):
-            score += 5
+            score += item_score
 
         self.logger.info(f"Repository score: {score}/{max_score}")
         return score
@@ -34,23 +36,24 @@ class ScoringEngine:
         """Calculate environment configuration score (15 points)"""
         score = 0.0
         max_score = self.config.WEIGHTS['environment_config']
+        item_score = max_score / 3
 
         env_results = results.get('environment', {})
 
         # Has .env template (5 points)
         if env_results.get('has_env_template', False):
-            score += 5
+            score += item_score
 
         # All required variables present (10 points)
         missing_vars = env_results.get('missing_variables', [])
         if not missing_vars:
-            score += 10
+            score += item_score * 2
         else:
             # Partial credit
             required_count = len(self.config.REQUIRED_ENV_VARS)
             missing_count = len(missing_vars)
             present_count = required_count - missing_count
-            score += (present_count / required_count) * 10
+            score += (present_count / required_count) * (item_score * 2)
 
         self.logger.info(f"Environment score: {score}/{max_score}")
         return score
@@ -93,14 +96,16 @@ class ScoringEngine:
         total_uploads = len(upload_results)
 
         if successful_uploads > 0:
-            score += 10  # At least one upload worked
+            start = max(10, max_score - 5)
+            score += start  # At least one upload worked
 
             # Documents processed correctly (5 points - bonus for all successful)
+            balance = self.config.WEIGHTS['upload'] - start
             if successful_uploads == total_uploads:
-                score += 5
+                score += balance
             else:
                 # Partial credit
-                score += (successful_uploads / total_uploads) * 5
+                score += (successful_uploads / total_uploads) * balance
 
         self.logger.info(f"Upload score: {score}/{max_score}")
         return score
@@ -109,6 +114,7 @@ class ScoringEngine:
         """Calculate RAG query functionality score (25 points)"""
         score = 0.0
         max_score = self.config.WEIGHTS['query']
+        start = max(10, max_score - 5)
 
         query_results = results.get('queries', [])
 
@@ -122,12 +128,14 @@ class ScoringEngine:
             return 0.0
 
         # Query endpoint works (10 points)
-        score += 10
+        score += start
 
         # Retrieves relevant context (8 points)
+        balance = max_score - start
+        context_max = math.ceil(balance / 2)
         queries_with_context = sum(1 for r in successful_queries if r.get('has_context', False))
         if queries_with_context > 0:
-            context_score = (queries_with_context / len(successful_queries)) * 8
+            context_score = (queries_with_context / len(successful_queries)) * context_max
             score += context_score
 
         # Generates coherent answers (7 points)
@@ -140,7 +148,7 @@ class ScoringEngine:
 
             if relevance_scores:
                 avg_relevance = sum(relevance_scores) / len(relevance_scores)
-                answer_score = (avg_relevance / 100) * 7
+                answer_score = (avg_relevance / 100) * (balance - context_max)
                 score += answer_score
             else:
                 # Give partial credit if answers exist but no relevance score
@@ -168,10 +176,11 @@ class ScoringEngine:
             'gemini_integration',
             'configurable_chunk'
         ]
+        item_score = max_score / len(requirements)
 
         for req in requirements:
             if tech_results.get(req, False):
-                score += 2
+                score += item_score
 
         self.logger.info(f"Technical score: {score}/{max_score}")
         return score

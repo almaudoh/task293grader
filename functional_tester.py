@@ -114,6 +114,10 @@ class FunctionalTester:
                     'response_data': data
                 }
             else:
+                self.logger.error(
+                    f"Query failed with status {response.status_code}:"
+                    f" {strip_html_tags(response.text)}"
+                )
                 return {
                     'success': False,
                     'status_code': response.status_code,

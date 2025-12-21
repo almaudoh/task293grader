@@ -35,6 +35,12 @@ Examples:
     )
 
     parser.add_argument(
+        '--yaml-override',
+        '-y',
+        help='Path to YAML file with configuration overrides'
+    )
+
+    parser.add_argument(
         '--verbose',
         '-v',
         action='store_true',
@@ -48,6 +54,13 @@ Examples:
         sys.exit(1)
 
     grader = AutomatedGrader()
+
+    if args.yaml_override:
+        try:
+            grader.config.override_from_yaml(args.yaml_override)
+        except (FileNotFoundError, ValueError, KeyError) as exc:
+            print(f"❌ Error loading YAML overrides: {exc}")
+            sys.exit(1)
 
     if args.batch:
         # Batch grading

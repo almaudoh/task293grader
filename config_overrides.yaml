@@ -1,0 +1,13 @@
+# ENDPOINT_PREFIX: /api
+REQUIRED_ENDPOINTS:
+  query:
+    path: /prompt
+    props:
+      - query
+  upload:
+    path: /upload
+    props:
+      - files
+  health:
+    path: /health
+    props: []
