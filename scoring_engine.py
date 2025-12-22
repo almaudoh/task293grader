@@ -96,7 +96,7 @@ class ScoringEngine:
         total_uploads = len(upload_results)
 
         if successful_uploads > 0:
-            start = max(10, max_score - 5)
+            start = min(10, max_score - 5)
             score += start  # At least one upload worked
 
             # Documents processed correctly (5 points - bonus for all successful)
@@ -114,7 +114,7 @@ class ScoringEngine:
         """Calculate RAG query functionality score (25 points)"""
         score = 0.0
         max_score = self.config.WEIGHTS['query']
-        start = max(10, max_score - 5)
+        start = min(10, max_score - 5)
 
         query_results = results.get('queries', [])
 
@@ -151,7 +151,7 @@ class ScoringEngine:
                 answer_score = (avg_relevance / 100) * (balance - context_max)
                 score += answer_score
             else:
-                # Give partial credit if answers exist but no relevance score
+                # Give partial credit if answers exist but no relevance score.
                 score += 4
 
         self.logger.info(f"Query score: {score}/{max_score}")
