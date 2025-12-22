@@ -84,7 +84,7 @@ class DependencyManager:
                 )
 
                 if result.returncode == 0:
-                    self.logger.info("Python dependencies installed in venv")
+                    self.logger.info("Python dependencies installed in environment")
                     self.logger.debug(f"Install output: {result.stdout}")
                     return True
 
