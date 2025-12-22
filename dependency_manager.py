@@ -24,30 +24,35 @@ class DependencyManager:
         try:
             if language == 'python':
                 # @todo: How can we make this more generic?
-                venv_dir = os.path.join(repo_path, 'venv')
 
-                # Create venv if it does not exist
-                if not os.path.isdir(venv_dir):
-                    self.logger.info("Creating Python virtual environment")
-                    create_cmd = [sys.executable, '-m', 'venv', venv_dir]
-                    subprocess.run(
-                        create_cmd,
-                        cwd=repo_path,
-                        capture_output=True,
-                        text=True,
-                        timeout=self.config.DEPENDENCY_INSTALL_TIMEOUT,
-                        check=True,
-                    )
+                if self.config.LANGUAGE_CONFIG['python'].get('options', {}).get('use_venv', False):
+                    venv_dir = os.path.join(repo_path, 'venv')
 
-                # Resolve venv python
-                if os.name == 'nt':
-                    venv_python = os.path.join(venv_dir, 'Scripts', 'python.exe')
+                    # Create venv if it does not exist
+                    if not os.path.isdir(venv_dir):
+                        self.logger.info("Creating Python virtual environment")
+                        create_cmd = [sys.executable, '-m', 'venv', venv_dir]
+                        subprocess.run(
+                            create_cmd,
+                            cwd=repo_path,
+                            capture_output=True,
+                            text=True,
+                            timeout=self.config.DEPENDENCY_INSTALL_TIMEOUT,
+                            check=True,
+                        )
+
+                    # Resolve venv python
+                    if os.name == 'nt':
+                        executable = os.path.join(venv_dir, 'Scripts', 'python.exe')
+                    else:
+                        executable = os.path.join(venv_dir, 'bin', 'python')
+
                 else:
-                    venv_python = os.path.join(venv_dir, 'bin', 'python')
+                    executable = sys.executable
 
                 # Upgrade pip first for reliability
                 self.logger.info("Upgrading pip in virtual environment")
-                upgrade_cmd = [venv_python, '-m', 'pip', 'install', '--upgrade', 'pip']
+                upgrade_cmd = [executable, '-m', 'pip', 'install', '--upgrade', 'pip']
                 subprocess.run(
                     upgrade_cmd,
                     cwd=repo_path,
@@ -68,8 +73,8 @@ class DependencyManager:
                     self.logger.info("Empty requirements.txt, skipping installation")
                     return True
 
-                self.logger.info("Installing Python dependencies in virtual environment")
-                install_cmd = [venv_python, '-m', 'pip', 'install', '-r', base_dependency_path]
+                self.logger.info("Installing Python dependencies in python environment")
+                install_cmd = [executable, '-m', 'pip', 'install', '-r', base_dependency_path]
                 result = subprocess.run(
                     install_cmd,
                     cwd=repo_path,
