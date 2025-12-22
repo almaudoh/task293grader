@@ -2,12 +2,18 @@
 import os
 import sys
 import subprocess
-from typing import Optional
+from typing import Optional, List
 from config import GraderConfig
 
 
 class DependencyManager:
     """Manages dependency installation for different languages"""
+
+    # Language-specific error messages for missing dependency files
+    DEPENDENCY_ERROR_MESSAGES = {
+        'python': 'Could not open requirements file',
+        'nodejs': 'ENOENT',  # npm error for missing file
+    }
 
     def __init__(self, logger, config: Optional[GraderConfig] = None):
         self.logger = logger
@@ -53,7 +59,7 @@ class DependencyManager:
 
         return venv_python
 
-    def _get_install_command(self, language: str, repo_path: str) -> Optional[list]:
+    def _get_install_command(self, language: str, repo_path: str) -> Optional[List[str]]:
         """Get install command for a language, handling venv if configured"""
         lang_config = self.config.LANGUAGE_CONFIG[language]
         install_cmd = lang_config['install_command'].copy()
@@ -63,9 +69,11 @@ class DependencyManager:
         if options.get('use_venv'):
             venv_python = self._setup_venv(repo_path)
             # Replace package manager command with venv python -m package_manager
-            # Currently only supports Python's pip, but can be extended
-            if install_cmd[0] == 'pip':
-                install_cmd = [venv_python, '-m', 'pip'] + install_cmd[1:]
+            # This transformation is specific to Python's pip but can be extended
+            # for other languages that support similar isolation mechanisms
+            pkg_manager = options.get('package_manager', 'pip')
+            if install_cmd[0] == pkg_manager:
+                install_cmd = [venv_python, '-m', pkg_manager] + install_cmd[1:]
 
         return install_cmd
 
@@ -111,12 +119,7 @@ class DependencyManager:
                 return True
 
             # Handle specific error messages for languages that report missing dependency files
-            error_messages = {
-                'python': 'Could not open requirements file',
-                'nodejs': 'ENOENT',  # npm error for missing file
-            }
-
-            error_msg = error_messages.get(language)
+            error_msg = self.DEPENDENCY_ERROR_MESSAGES.get(language)
             if error_msg and error_msg in (result.stderr or ''):
                 self.logger.info(f"No {dependency_file} present; skipping dependency installation")
                 return True

@@ -104,7 +104,10 @@ class GraderConfig:
     TEST_HF_KEY = os.getenv('GRADER_HF_KEY', 'hf_test_key_placeholder')
     TEST_GEMINI_KEY = os.getenv('GRADER_GEMINI_KEY', 'gemini_test_key_placeholder')
 
-    EMBED_MODEL_NAME = os.getenv('GRADER_EMBED_MODEL_NAME', 'sentence-transformers/all-MiniLM-L6-v2')
+    EMBED_MODEL_NAME = os.getenv(
+        'GRADER_EMBED_MODEL_NAME',
+        'sentence-transformers/all-MiniLM-L6-v2'
+    )
     LLM_MODEL_NAME = os.getenv('GRADER_LLM_MODEL_NAME', 'gemini-2.0-flash-exp')
 
     # Test data
@@ -125,7 +128,7 @@ class GraderConfig:
             'dependency_file': 'requirements.txt',
             'install_command': ['pip', 'install', '-r', 'requirements.txt'],
             'run_command': ['uvicorn', 'main:app', '--host', '0.0.0.0'],
-            'options': {'use_venv': True},
+            'options': {'use_venv': True, 'package_manager': 'pip'},
         },
         'golang': {
             'main_files': ['main.go'],
