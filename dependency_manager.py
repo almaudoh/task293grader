@@ -9,17 +9,11 @@ from config import GraderConfig
 class DependencyManager:
     """Manages dependency installation for different languages"""
 
-    # Language-specific error messages for missing dependency files
-    DEPENDENCY_ERROR_MESSAGES = {
-        'python': 'Could not open requirements file',
-        'nodejs': 'ENOENT',  # npm error for missing file
-    }
-
     def __init__(self, logger, config: Optional[GraderConfig] = None):
         self.logger = logger
         self.config = config or GraderConfig()
 
-    def _setup_venv(self, repo_path: str) -> Optional[str]:
+    def _setup_venv(self, repo_path: str) -> str:
         """Create Python virtual environment and return path to venv python executable.
 
         Note: This method is Python-specific and uses Python's venv module.
@@ -59,8 +53,13 @@ class DependencyManager:
 
         return venv_python
 
-    def _get_install_command(self, language: str, repo_path: str) -> Optional[List[str]]:
-        """Get install command for a language, handling venv if configured"""
+    def _get_install_command(self, language: str, repo_path: str) -> List[str]:
+        """Get install command for a language, handling venv if configured.
+
+        For languages with use_venv option, this transforms the install command
+        to use a virtual environment. Currently implemented for Python's pip
+        using the pattern: [venv_python, '-m', package_manager, ...args]
+        """
         lang_config = self.config.LANGUAGE_CONFIG[language]
         install_cmd = lang_config['install_command'].copy()
 
@@ -68,11 +67,12 @@ class DependencyManager:
         options = lang_config.get('options', {})
         if options.get('use_venv'):
             venv_python = self._setup_venv(repo_path)
-            # Replace package manager command with venv python -m package_manager
-            # This transformation is specific to Python's pip but can be extended
-            # for other languages that support similar isolation mechanisms
             pkg_manager = options.get('package_manager', 'pip')
-            if install_cmd[0] == pkg_manager:
+
+            # Transform command to use venv: replace [pkg_manager, ...] with
+            # [venv_python, '-m', pkg_manager, ...]
+            # This pattern works for Python's pip and can be adapted for similar tools
+            if install_cmd and install_cmd[0] == pkg_manager:
                 install_cmd = [venv_python, '-m', pkg_manager] + install_cmd[1:]
 
         return install_cmd
@@ -116,12 +116,6 @@ class DependencyManager:
             if result.returncode == 0:
                 self.logger.info("Dependencies installed successfully")
                 self.logger.debug(f"Install output: {result.stdout}")
-                return True
-
-            # Handle specific error messages for languages that report missing dependency files
-            error_msg = self.DEPENDENCY_ERROR_MESSAGES.get(language)
-            if error_msg and error_msg in (result.stderr or ''):
-                self.logger.info(f"No {dependency_file} present; skipping dependency installation")
                 return True
 
             self.logger.error(f"Dependency installation failed: {result.stderr}")
