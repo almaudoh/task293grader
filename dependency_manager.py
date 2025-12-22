@@ -14,7 +14,10 @@ class DependencyManager:
         self.config = config or GraderConfig()
 
     def _setup_venv(self, repo_path: str) -> Optional[str]:
-        """Create virtual environment and return path to venv python executable"""
+        """Create Python virtual environment and return path to venv python executable.
+
+        Note: This method is Python-specific and uses Python's venv module.
+        """
         venv_dir = os.path.join(repo_path, 'venv')
 
         # Create venv if it does not exist
@@ -51,15 +54,16 @@ class DependencyManager:
         return venv_python
 
     def _get_install_command(self, language: str, repo_path: str) -> Optional[list]:
-        """Get install command for a language, handling venv for Python if needed"""
+        """Get install command for a language, handling venv if configured"""
         lang_config = self.config.LANGUAGE_CONFIG[language]
         install_cmd = lang_config['install_command'].copy()
 
-        # Handle venv for languages that support it (e.g., Python)
+        # Handle venv for languages that support it
         options = lang_config.get('options', {})
-        if options.get('use_venv') and language == 'python':
+        if options.get('use_venv'):
             venv_python = self._setup_venv(repo_path)
-            # Replace pip command with venv python -m pip
+            # Replace package manager command with venv python -m package_manager
+            # Currently only supports Python's pip, but can be extended
             if install_cmd[0] == 'pip':
                 install_cmd = [venv_python, '-m', 'pip'] + install_cmd[1:]
 
@@ -106,8 +110,14 @@ class DependencyManager:
                 self.logger.debug(f"Install output: {result.stdout}")
                 return True
 
-            # Handle specific error messages
-            if 'Could not open requirements file' in (result.stderr or ''):
+            # Handle specific error messages for languages that report missing dependency files
+            error_messages = {
+                'python': 'Could not open requirements file',
+                'nodejs': 'ENOENT',  # npm error for missing file
+            }
+
+            error_msg = error_messages.get(language)
+            if error_msg and error_msg in (result.stderr or ''):
                 self.logger.info(f"No {dependency_file} present; skipping dependency installation")
                 return True
 
