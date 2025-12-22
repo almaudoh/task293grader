@@ -83,8 +83,6 @@ class DependencyManager:
                     timeout=self.config.DEPENDENCY_INSTALL_TIMEOUT,
                 )
 
-                self.logger.info(f"result.stdout: {result.stdout}; result.stderr: {result.stderr}")
-
                 if result.returncode == 0:
                     self.logger.info("Python dependencies installed in venv")
                     self.logger.debug(f"Install output: {result.stdout}")
