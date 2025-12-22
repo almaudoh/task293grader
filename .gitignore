@@ -8,3 +8,4 @@ __pycache__/
 !.env.*.example
 grading_logs/
 grading_reports/
+grading_workspace/

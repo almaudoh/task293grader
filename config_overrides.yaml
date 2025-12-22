@@ -1,10 +1,10 @@
 # ENDPOINT_PREFIX: /api
 REQUIRED_ENDPOINTS:
   query:
-    path: /prompt
+    path: /chat
     props:
       - query
-    mime_type: application/json
+    mime_type: multipart/form-data
   upload:
     path: /upload
     props:
@@ -12,3 +12,5 @@ REQUIRED_ENDPOINTS:
   health:
     path: /health
     props: []
+# SERVER_PORT: 8081
+# CHROMA_PORT: 8000

@@ -45,20 +45,8 @@ class DependencyManager:
                 else:
                     venv_python = os.path.join(venv_dir, 'bin', 'python')
 
-                # requirements
-                req_file = os.path.join(
-                    repo_path, self.config.LANGUAGE_CONFIG['python']['dependency_file']
-                )
-
-                if not os.path.isfile(req_file):
-                    self.logger.info("No requirements.txt found, skipping installation")
-                    return True
-
-                if os.path.getsize(req_file) == 0:
-                    self.logger.info("Empty requirements.txt, skipping installation")
-                    return True
-
                 # Upgrade pip first for reliability
+                self.logger.info("Upgrading pip in virtual environment")
                 upgrade_cmd = [venv_python, '-m', 'pip', 'install', '--upgrade', 'pip']
                 subprocess.run(
                     upgrade_cmd,
@@ -69,12 +57,19 @@ class DependencyManager:
                     check=False,
                 )
 
-                # Double-check presence before install to avoid false negatives
+                # Requirements installation
+                base_dependency_path = self.config.LANGUAGE_CONFIG['python']['dependency_file']
+                req_file = os.path.join(repo_path, base_dependency_path)
                 if not os.path.isfile(req_file):
-                    self.logger.info("No requirements.txt found after venv setup, skipping installation")
+                    self.logger.info("No requirements.txt found, skipping installation")
                     return True
 
-                install_cmd = [venv_python, '-m', 'pip', 'install', '-r', req_file]
+                if os.path.getsize(req_file) == 0:
+                    self.logger.info("Empty requirements.txt, skipping installation")
+                    return True
+
+                self.logger.info("Installing Python dependencies in virtual environment")
+                install_cmd = [venv_python, '-m', 'pip', 'install', '-r', base_dependency_path]
                 result = subprocess.run(
                     install_cmd,
                     cwd=repo_path,
@@ -82,6 +77,8 @@ class DependencyManager:
                     text=True,
                     timeout=self.config.DEPENDENCY_INSTALL_TIMEOUT,
                 )
+
+                self.logger.info(f"result.stdout: {result.stdout}; result.stderr: {result.stderr}")
 
                 if result.returncode == 0:
                     self.logger.info("Python dependencies installed in venv")
@@ -96,6 +93,7 @@ class DependencyManager:
                 return False
 
             # Non-Python languages use configured install command
+            self.logger.info(f"Running install command for {language}")
             install_cmd = self.config.LANGUAGE_CONFIG[language]['install_command']
             result = subprocess.run(
                 install_cmd,
