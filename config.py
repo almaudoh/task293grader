@@ -124,7 +124,8 @@ class GraderConfig:
             'main_files': ['main.py', 'app.py', 'server.py'],
             'dependency_file': 'requirements.txt',
             'install_command': ['pip', 'install', '-r', 'requirements.txt'],
-            'run_command': ['uvicorn', 'main:app', '--host', '0.0.0.0']
+            'run_command': ['uvicorn', 'main:app', '--host', '0.0.0.0'],
+            'options': {'use_venv': True},
         },
         'golang': {
             'main_files': ['main.go'],
