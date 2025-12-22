@@ -1,8 +1,6 @@
 # config.py
-from doctest import debug
 import os
 from dataclasses import dataclass
-from typing import Union
 from dotenv import load_dotenv
 import yaml
 
