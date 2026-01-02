@@ -15,7 +15,7 @@ class FunctionalTester:
         self.logger = logger
         self.config = config or GraderConfig()
 
-    def test_document_upload(self, documents: List[str]) -> List[Dict[str, Any]]:
+    def test_document_upload(self, documents: List[str], context: str = "") -> List[Dict[str, Any]]:
         """Test document upload functionality"""
         self.logger.info("Testing document upload")
         results = []
@@ -30,9 +30,18 @@ class FunctionalTester:
                         (doc_path.split('/')[-1], f, 'text/plain')
                     }
 
+                    data = {"context": context} if (
+                        "context" in self.config.REQUIRED_ENDPOINTS['upload']['props']
+                    ) else {}
+
+                    for key in self.config.REQUIRED_ENDPOINTS['upload']['props'][1:]:
+                        if key not in data:
+                            data[key] = ""
+
                     response = requests.post(
                         f"{self.config.SERVER_BASE_URL}{self.config.ENDPOINT_PREFIX}"
                         f"{self.config.REQUIRED_ENDPOINTS['upload']['path']}",
+                        data=data,
                         files=files,
                         timeout=self.config.API_REQUEST_TIMEOUT
                     )
@@ -77,16 +86,23 @@ class FunctionalTester:
 
         return results
 
-    def test_query_endpoint(self, query: str) -> Dict[str, Any]:
+    def test_query_endpoint(self, query: str, context: str = "") -> Dict[str, Any]:
         """Test a single query"""
         try:
             self.logger.info(f"Testing query: {query}")
 
             url = f"{self.config.SERVER_BASE_URL}{self.config.ENDPOINT_PREFIX}" \
                   f"{self.config.REQUIRED_ENDPOINTS['query']['path']}"
-            payload = {
-                self.config.REQUIRED_ENDPOINTS['query']['props'][0]: query
-            }
+            payload = {}
+            if self.config.REQUIRED_ENDPOINTS['query']['props']:
+                key = self.config.REQUIRED_ENDPOINTS['query']['props'][0]
+                payload[key] = query
+            if "context" in self.config.REQUIRED_ENDPOINTS['query']['props']:
+                payload["context"] = context
+            for key in self.config.REQUIRED_ENDPOINTS['query']['props'][1:]:
+                if key not in payload:
+                    payload[key] = ""
+
             timeout = self.config.API_REQUEST_TIMEOUT
             mime_type = self.config.REQUIRED_ENDPOINTS['query'].get('mime_type', 'application/json')
 
@@ -152,7 +168,7 @@ class FunctionalTester:
                 'error': str(e)
             }
 
-    def test_rag_queries(self) -> List[Dict[str, Any]]:
+    def test_rag_queries(self, context: str = "") -> List[Dict[str, Any]]:
         """Test RAG query functionality with multiple queries"""
         self.logger.info("Testing RAG queries")
         results = []
@@ -161,7 +177,7 @@ class FunctionalTester:
             query_text = test_query['question']
             expected_keywords = test_query['expected_keywords']
 
-            result = self.test_query_endpoint(query_text)
+            result = self.test_query_endpoint(query_text, context=context)
             result['query'] = query_text
 
             # Calculate relevance if we got an answer

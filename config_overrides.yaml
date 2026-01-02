@@ -1,14 +1,16 @@
 # ENDPOINT_PREFIX: /api
 REQUIRED_ENDPOINTS:
   query:
-    path: /chat
+    path: /prompt
     props:
       - query
+      - context
     mime_type: multipart/form-data
   upload:
     path: /upload
     props:
       - files
+      - context
   health:
     path: /health
     props: []

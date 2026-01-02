@@ -1,5 +1,6 @@
 # automated_grader.py
 import os
+from time import time
 from typing import Dict, Any, Optional
 from copy import deepcopy
 from grading_session import GradingSession
@@ -175,12 +176,13 @@ class AutomatedGrader:
             logger.info("\n[STEP 6/11] Testing document upload...")
             tester = FunctionalTester(logger, config=local_config)
 
-            upload_results = tester.test_document_upload(test_documents)
+            context = f"test-{int(time())}"
+            upload_results = tester.test_document_upload(test_documents, context=context)
             session.add_results('upload', upload_results)
 
             # Step 7: Test RAG queries
             logger.info("\n[STEP 7/11] Testing RAG query functionality...")
-            query_results = tester.test_rag_queries()
+            query_results = tester.test_rag_queries(context=context)
             session.add_results('queries', query_results)
 
             # Step 8: Verify technical requirements

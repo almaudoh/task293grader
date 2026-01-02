@@ -51,7 +51,7 @@ class DependencyManager:
                     executable = sys.executable
 
                 # Upgrade pip first for reliability
-                self.logger.info("Upgrading pip in virtual environment")
+                self.logger.info("Upgrading pip in python environment")
                 upgrade_cmd = [executable, '-m', 'pip', 'install', '--upgrade', 'pip']
                 subprocess.run(
                     upgrade_cmd,

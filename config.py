@@ -35,12 +35,12 @@ class GraderConfig:
     REQUIRED_ENDPOINTS = {
         "query": {
             "path": "/query",
-            "props": ["query"],
+            "props": ["query", "context"],
             "mime_type": "application/json"
         },
         "upload": {
             "path": "/upload",
-            "props": ["files"],
+            "props": ["files", "context"],
         },
         "health": {
             "path": "/health",
@@ -125,7 +125,7 @@ class GraderConfig:
             'dependency_file': 'requirements.txt',
             'install_command': ['pip', 'install', '-r', 'requirements.txt'],
             'run_command': ['uvicorn', 'main:app', '--host', '0.0.0.0'],
-            'options': {'use_venv': True},
+            'options': {'use_venv': False},
         },
         'golang': {
             'main_files': ['main.go'],
